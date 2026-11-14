@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "module": "preserve",
-    "moduleResolution": "bundler",
+    "module": "Node20",
+    "moduleResolution": "node16",
     "resolvePackageJsonExports": true,
     "esModuleInterop": true,
     "isolatedModules": true,

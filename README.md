@@ -28,8 +28,49 @@
 ## Project setup
 
 ```bash
-$ pnpm install
+$ npm install
 ```
+
+## Authentication
+
+1. Set `DATABASE_URL`, a random `JWT_SECRET` of at least 32 bytes, and the exact
+   frontend origin as `CLIENT_ORIGIN` in `.env` (see `.env.example`).
+2. Against a new, empty development database, run:
+
+   ```bash
+   npx prisma generate --config prisma.config.ts
+   npx prisma migrate dev --config prisma.config.ts
+   ```
+
+   The initial migration creates the user and post tables. Do not apply it to
+   an existing schema without first reviewing Prisma's baselining procedure.
+   The Prisma config must be explicit because another config exists in this
+   repository. See [prisma.md](prisma.md).
+3. Use HTTPS for the API and frontend. Send browser requests with
+   `credentials: 'include'` and JSON bodies:
+
+   - `POST /auth/register`: `{ "email": "...", "password": "..." }`; creates
+     a `MEMBER` and returns its id, email and role. Registration does not log in.
+   - `POST /auth/login`: the same body; returns the user and sets an eight-hour
+     `HttpOnly`, `Secure`, `SameSite=None` cookie.
+   - `GET /auth/me`: returns the current user.
+   - `POST /auth/logout`: revokes the current session and clears the cookie.
+
+Passwords must be at least eight characters and at most 72 UTF-8 bytes.
+Registration never accepts a role. An authorized database operator can assign
+`ADMIN` or `SUPERADMIN` to an existing user through a controlled database
+update. Role changes take effect on the next request.
+
+All routes require authentication unless marked with `@Public()`. Use
+`@Roles(Role.ADMIN, Role.SUPERADMIN)` to restrict a route; role matching is
+exact, so list every role that should have access. All state-changing requests
+must carry an `Origin` header exactly matching `CLIENT_ORIGIN` to prevent
+cross-site request forgery. Do not change data in GET requests.
+
+Login and registration are limited to five requests per minute per IP, per
+application instance. For multi-instance deployments, use a shared throttler
+store and configure trusted proxies correctly. Expired session rows can be
+removed by a database maintenance job.
 
 ## Compile and run the project
 
