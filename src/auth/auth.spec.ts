@@ -9,6 +9,8 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { Prisma, Role } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProductsController } from '../products/products.controller';
+import { ProductsService } from '../products/products.service';
 import { AUTH_CONFIG } from './auth.config';
 import { Roles } from './auth.decorators';
 import { AuthModule } from './auth.module';
@@ -113,7 +115,17 @@ describe('cookie authentication', () => {
 
     const module = await Test.createTestingModule({
       imports: [AuthModule],
-      controllers: [TestController],
+      controllers: [TestController, ProductsController],
+      providers: [
+        {
+          provide: ProductsService,
+          useValue: {
+            create: jest.fn().mockResolvedValue({ id: 1 }),
+            update: jest.fn().mockResolvedValue({ id: 1 }),
+            remove: jest.fn().mockResolvedValue({ id: 1 }),
+          },
+        },
+      ],
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
@@ -200,6 +212,38 @@ describe('cookie authentication', () => {
       .get('/test/superadmin')
       .set('Cookie', cookie)
       .expect(200);
+  });
+
+  it('requires an authenticated admin for product writes', async () => {
+    const cookie = await registerAndLogin();
+    const product = {
+      name: 'Socks',
+      description: 'Cotton socks',
+      price: 10,
+      quantity: 1,
+      color: 'Red',
+      material: 'Cotton',
+      size: 'M',
+      feature: ['soft'],
+    };
+    const writes = [
+      () => request(app.getHttpServer()).post('/products').send(product),
+      () => request(app.getHttpServer()).patch('/products/1').send({ name: 'New name' }),
+      () => request(app.getHttpServer()).delete('/products/1'),
+    ];
+
+    for (const write of writes) {
+      await write().set('Origin', origin).expect(401);
+      await write().set('Origin', origin).set('Cookie', cookie).expect(403);
+    }
+
+    users[0].role = Role.ADMIN;
+    for (const [index, write] of writes.entries()) {
+      await write()
+        .set('Origin', origin)
+        .set('Cookie', cookie)
+        .expect(index === 0 ? 201 : 200);
+    }
   });
 
   it('rejects missing or untrusted origins, privileged registration, and oversized bcrypt input', async () => {

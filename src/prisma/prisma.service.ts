@@ -8,6 +8,7 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  product: any;
   constructor() {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
