@@ -184,7 +184,8 @@ describe('cookie authentication', () => {
       .post('/auth/logout')
       .set('Origin', origin)
       .set('Cookie', cookie)
-      .expect(204);
+      .expect(200)
+      .expect({ message: 'user logged out' });
     expect(logout.headers['set-cookie'][0]).toContain('__Host-auth=;');
     await request(app.getHttpServer())
       .get('/auth/me')

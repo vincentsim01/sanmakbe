@@ -54,7 +54,7 @@ $ npm install
    - `POST /auth/login`: the same body; returns the user and sets an eight-hour
      `HttpOnly`, `Secure`, `SameSite=None` cookie.
    - `GET /auth/me`: returns the current user.
-   - `POST /auth/logout`: revokes the current session and clears the cookie.
+   - `POST /auth/logout`: revokes the current session, clears the cookie, and returns `200` with `{"message":"user logged out"}`.
 
 Passwords must be at least eight characters and at most 72 UTF-8 bytes.
 Registration never accepts a role. An authorized database operator can assign

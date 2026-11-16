@@ -28,7 +28,7 @@ export class ProductsController {
     constructor(private readonly productsService: ProductsService){}
 
     @Post()
-    @Roles(Role.ADMIN)
+    @Roles(Role.ADMIN, Role.SUPERADMIN)
     @ApiOperation({ description: 'Create a new product', summary: 'Create Product'})
     create(@Body() createProductDto: CreateProductDto){
         return this.productsService.create(createProductDto);
@@ -47,14 +47,14 @@ export class ProductsController {
     }
 
     @Patch(':id')
-    @Roles(Role.ADMIN)
+    @Roles(Role.ADMIN, Role.SUPERADMIN)
     @ApiOperation({ description: 'Update a product by ID', summary: 'Update Product'})
     update(@Param('id', ParseIntPipe) id: number, @Body() updateProductDto: UpdateProductDto){
         return this.productsService.update(id, updateProductDto);
     }
 
     @Delete(':id')
-    @Roles(Role.ADMIN)
+    @Roles(Role.ADMIN, Role.SUPERADMIN)
     @ApiOperation({ description: 'Delete a product by ID', summary: 'Delete Product'})
     remove(@Param('id', ParseIntPipe) id: number){
         return this.productsService.remove(id);

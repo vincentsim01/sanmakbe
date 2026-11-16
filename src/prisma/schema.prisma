@@ -50,15 +50,16 @@ model Post {
 }
 
 model Product {
-  id        Int     @id @default(autoincrement())
-  name      String
-  size      String
-  material  String
-  color     String
-  Feature   String[] @default([])
-  price     Decimal @db.Decimal(10,2)
-  quantity  Int  @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int     @id @default(autoincrement())
+  name          String
+  description   String
+  size          String[]
+  material      String[]
+  color         String[]
+  feature       String[] @default([])
+  price         Decimal @db.Decimal(10,2)
+  quantity      Int  @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
 }

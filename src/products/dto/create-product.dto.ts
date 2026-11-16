@@ -32,18 +32,21 @@ export class CreateProductDto {
   quantity: number;
 
   @ApiProperty({ example: 'Red', description: 'Color of the product' })
-  @IsString()
-  color: string;
+  @IsArray()
+  @ArrayNotEmpty()
+  color: string[];
 
   @ApiProperty({example: 'cotton', description: 'Material of the product'})
-  @IsString()
-  material: string;
+  @IsArray()
+  @ArrayNotEmpty()
+  material: string[];
 
-  @ApiProperty({ example: "Mata Kaki", description: 'size of the product'})
-  @IsString()
-  size: string;
+  @ApiProperty({ example: ["S", "M", "L"], description: 'size of the product' })
+  @IsArray()
+  @ArrayNotEmpty()
+  size: string[];
 
   @ApiProperty({ example: 'anti-slip dotting', description: 'product feature'})
-  @IsArray()
+  @ArrayNotEmpty()
   feature: string[];
 }

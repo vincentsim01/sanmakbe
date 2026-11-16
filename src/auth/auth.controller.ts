@@ -56,13 +56,14 @@ export class AuthController {
   }
 
   @Post('logout')
-  @HttpCode(204)
+  @HttpCode(200)
   async logout(
     @Req() request: AuthenticatedRequest,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<void> {
+  ): Promise<{ message: string }> {
     await this.auth.logout(request.sessionId);
     response.clearCookie(AUTH_COOKIE, cookieOptions);
+    return { message: 'user logged out' };
   }
 
   @Get('me')

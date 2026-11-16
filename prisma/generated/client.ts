@@ -54,3 +54,8 @@ export type AuthSession = Prisma.AuthSessionModel
  * 
  */
 export type Post = Prisma.PostModel
+/**
+ * Model Product
+ * 
+ */
+export type Product = Prisma.ProductModel
