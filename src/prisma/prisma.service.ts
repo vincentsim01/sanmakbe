@@ -1,5 +1,10 @@
 import 'dotenv/config';
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
+
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from './generated/client';
 
@@ -8,9 +13,9 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  product: any;
   constructor() {
     const connectionString = process.env.DATABASE_URL;
+
     if (!connectionString) {
       throw new Error('DATABASE_URL is not set');
     }
@@ -20,11 +25,11 @@ export class PrismaService
     });
   }
 
-  async onModuleInit(): Promise<void> {
+  async onModuleInit() {
     await this.$connect();
   }
 
-  async onModuleDestroy(): Promise<void> {
+  async onModuleDestroy() {
     await this.$disconnect();
   }
 }
