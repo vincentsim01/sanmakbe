@@ -14,6 +14,42 @@ enum Role {
   SUPERADMIN
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  VIRTUAL_ACCOUNT
+  EWALLET
+  QRIS
+  CREDIT_CARD
+  COD
+}
+
+enum ShipmentStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  RETURNED
+}
+
+enum OrderStatus{
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id           Int           @id @default(autoincrement())
   email        String        @unique
@@ -62,4 +98,117 @@ model Product {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+}
+
+model Payment {
+  id            String      @id @default(uuid())
+  orderId       String
+  order         Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  amount        Decimal     @db.Decimal(14,2) 
+  currency      String      @default("IDR")
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  provider      String?
+  providerRef   String?       @unique // transaction id from the gateway
+  paymentUrl    String? // redirect / checkout URL
+  paidAt        DateTime?
+  expiresAt     DateTime?
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+
+  @@index([orderId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  orderNumber   String        @unique
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status        OrderStatus   @default(PENDING_PAYMENT)
+  subtotal     Decimal     @db.Decimal(14, 2)
+  shippingCost Decimal     @db.Decimal(14, 2)
+  discount     Decimal     @default(0) @db.Decimal(14, 2)
+  totalAmount  Decimal     @db.Decimal(14, 2)
+  currency     String      @default("IDR")
+  notes        String?
+  items        OrderItem[]
+  shipment     Shipment?
+  payments     Payment[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName String
+  unitPrice   Decimal @db.Decimal(14, 2)
+  quantity    Int
+  subtotal    Decimal @db.Decimal(14, 2)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Shipment {
+  id             String         @id @default(uuid())
+  orderId        String         @unique
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  courier        String
+  service        String
+  cost           Decimal        @db.Decimal(14, 2)
+  trackingNumber String?
+  status         ShipmentStatus @default(PENDING)
+  recipientName  String
+  phone          String
+  address        String
+  city           String
+  province       String
+  postalCode     String
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("shipments")
+}
+
+model Cart {
+  id        String  @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
 }

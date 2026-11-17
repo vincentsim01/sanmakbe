@@ -5,6 +5,9 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
+import { PaymentController } from './payment/payment.controller';
+import { PaymentService } from './payment/payment.service';
+import { PaymentModule } from './payment/payment.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -21,8 +24,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       serviceId: 'sanmakbe',
     }),
     ProductsModule,
+    PaymentModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, PaymentController],
+  providers: [AppService, PaymentService],
 })
 export class AppModule {}
