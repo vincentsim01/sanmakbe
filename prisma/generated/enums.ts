@@ -16,3 +16,15 @@ export const Role = {
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
+
+
+export const PaymentMethod = {
+  BANK_TRANSFER: 'BANK_TRANSFER',
+  VIRTUAL_ACCOUNT: 'VIRTUAL_ACCOUNT',
+  EWALLET: 'EWALLET',
+  QRIS: 'QRIS',
+  CREDIT_CARD: 'CREDIT_CARD',
+  COD: 'COD'
+} as const
+
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod]

@@ -8,6 +8,8 @@ import { ProductsModule } from './products/products.module';
 import { PaymentController } from './payment/payment.controller';
 import { PaymentService } from './payment/payment.service';
 import { PaymentModule } from './payment/payment.module';
+import { CartModule } from './cart/cart.module';
+import { CheckoutModule } from './checkout/checkout.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -25,6 +27,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
     ProductsModule,
     PaymentModule,
+    CartModule,
+    CheckoutModule,
   ],
   controllers: [AppController, PaymentController],
   providers: [AppService, PaymentService],
