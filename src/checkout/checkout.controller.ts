@@ -1,34 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // adjust path
 import { CheckoutService } from './checkout.service';
-import { CreateCheckoutDto } from './dto/create-checkout.dto';
-import { UpdateCheckoutDto } from './dto/update-checkout.dto';
+import { CreateCheckoutDto } from './dto';
 
+@ApiTags('checkout')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('checkout')
 export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}
 
+  @Post('summary')
+  summary(@Req() req: any, @Body() dto: CreateCheckoutDto) {
+    return this.checkoutService.summary(req.user.id, dto);
+  }
+
   @Post()
-  create(@Body() createCheckoutDto: CreateCheckoutDto) {
-    return this.checkoutService.create(createCheckoutDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.checkoutService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.checkoutService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCheckoutDto: UpdateCheckoutDto) {
-    return this.checkoutService.update(+id, updateCheckoutDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.checkoutService.remove(+id);
+  checkout(@Req() req: any, @Body() dto: CreateCheckoutDto) {
+    return this.checkoutService.checkout(req.user.id, dto);
   }
 }

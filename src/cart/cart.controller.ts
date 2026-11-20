@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Req, 
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // adjust path
 import { CartService } from './cart.service';
-import { CreateCartDto, UpdateCartDto } from './dto';
+import { CreateCartDto, UpdateCartDto } from './dto/Index';
 
 @ApiTags('cart')
 @ApiBearerAuth()

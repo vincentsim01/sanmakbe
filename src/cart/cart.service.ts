@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service'; // adjust path
-import { CreateCartDto, UpdateCartDto } from './dto';
+import { CreateCartDto, UpdateCartDto } from './dto/Index';
 
 @Injectable()
 export class CartService {
