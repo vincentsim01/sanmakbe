@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service'; // adjust path
-import { CreateCartDto, UpdateCartDto } from './dto/Index';
+import { CreateCartDto, UpdateCartDto } from './dto';
 
 @Injectable()
 export class CartService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getCart(userId: string) {
+  async getCart(userId: number) {
     const cart = await this.prisma.cart.upsert({
       where: { userId },
       update: {},
@@ -25,7 +25,7 @@ export class CartService {
     return { ...cart, subtotal, itemCount };
   }
 
-  async addItem(userId: string, dto: CreateCartDto) {
+  async addItem(userId: number, dto: CreateCartDto) {
     const product = await this.prisma.product.findUnique({ where: { id: dto.productId } });
     if (!product) throw new NotFoundException('Product not found');
 
@@ -39,7 +39,7 @@ export class CartService {
       where: { cartId_productId: { cartId: cart.id, productId: dto.productId } },
     });
     const quantity = (existing?.quantity ?? 0) + dto.quantity;
-    if (quantity > product.stock) throw new BadRequestException('Insufficient stock');
+    if (quantity > product.quantity) throw new BadRequestException('Insufficient stock');
 
     await this.prisma.cartItem.upsert({
       where: { cartId_productId: { cartId: cart.id, productId: dto.productId } },
@@ -49,19 +49,19 @@ export class CartService {
     return this.getCart(userId);
   }
 
-  async updateItem(userId: string, itemId: string, dto: UpdateCartDto) {
+  async updateItem(userId: number, itemId: string, dto: UpdateCartDto) {
     const item = await this.prisma.cartItem.findFirst({
       where: { id: itemId, cart: { userId } },
       include: { product: true },
     });
     if (!item) throw new NotFoundException('Cart item not found');
-    if (dto.quantity > item.product.stock) throw new BadRequestException('Insufficient stock');
+    if (dto.quantity > item.product.quantity) throw new BadRequestException('Insufficient stock');
 
     await this.prisma.cartItem.update({ where: { id: itemId }, data: { quantity: dto.quantity } });
     return this.getCart(userId);
   }
 
-  async removeItem(userId: string, itemId: string) {
+  async removeItem(userId: number, itemId: string) {
     const item = await this.prisma.cartItem.findFirst({ where: { id: itemId, cart: { userId } } });
     if (!item) throw new NotFoundException('Cart item not found');
 
@@ -69,7 +69,7 @@ export class CartService {
     return this.getCart(userId);
   }
 
-  async clear(userId: string) {
+  async clear(userId: number) {
     await this.prisma.cartItem.deleteMany({ where: { cart: { userId } } });
     return this.getCart(userId);
   }

@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus } from '../../prisma/generated/client';
 
 // Response shapes (for Swagger docs). Prisma generates the real DB types.
 export class OrderItemEntity {
   @ApiProperty() id: string;
-  @ApiProperty() productId: string;
+  @ApiProperty() productId: number;
   @ApiProperty() productName: string;
   @ApiProperty() unitPrice: string;
   @ApiProperty() quantity: number;
@@ -14,7 +14,7 @@ export class OrderItemEntity {
 export class OrderEntity {
   @ApiProperty() id: string;
   @ApiProperty() orderNumber: string;
-  @ApiProperty() userId: string;
+  @ApiProperty() userId: number;
   @ApiProperty({ enum: OrderStatus }) status: OrderStatus;
   @ApiProperty() subtotal: string;
   @ApiProperty() shippingCost: string;

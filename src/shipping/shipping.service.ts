@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, ShipmentStatus } from '@prisma/client';
+import { OrderStatus, ShipmentStatus } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service'; // adjust path
 import { CalculateShippingDto, UpdateShippingDto } from './dto';
 
@@ -34,7 +34,7 @@ export class ShippingService {
     return rate;
   }
 
-  async findByOrder(orderId: string, userId?: string) {
+  async findByOrder(orderId: string, userId?: number) {
     const shipment = await this.prisma.shipment.findFirst({
       where: { orderId, ...(userId && { order: { userId } }) },
     });

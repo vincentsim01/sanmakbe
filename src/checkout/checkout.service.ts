@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../prisma/generated/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service'; // adjust path
 import { ShippingService } from '../shipping/shipping.service';
@@ -15,7 +15,7 @@ export class CheckoutService {
   ) {}
 
   /** Preview totals without creating anything. */
-  async summary(userId: string, dto: CreateCheckoutDto) {
+  async summary(userId: number, dto: CreateCheckoutDto) {
     const { items, subtotal, rate, total } = await this.buildQuote(userId, dto);
     return {
       items: items.map((i) => ({
@@ -32,15 +32,15 @@ export class CheckoutService {
   }
 
   /** Turn the cart into an order (status PENDING_PAYMENT). Pay via POST /payments afterwards. */
-  async checkout(userId: string, dto: CreateCheckoutDto) {
+  async checkout(userId: number, dto: CreateCheckoutDto) {
     const { cartId, items, subtotal, rate, total } = await this.buildQuote(userId, dto);
 
     return this.prisma.$transaction(async (tx) => {
       // atomic stock decrement; fails if someone else bought the last unit
       for (const item of items) {
         const res = await tx.product.updateMany({
-          where: { id: item.productId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } },
+          where: { id: item.productId, quantity: { gte: item.quantity } },
+          data: { quantity: { decrement: item.quantity } },
         });
         if (res.count === 0) {
           throw new BadRequestException(`Insufficient stock for ${item.product.name}`);
@@ -81,7 +81,7 @@ export class CheckoutService {
     });
   }
 
-  private async buildQuote(userId: string, dto: CreateCheckoutDto) {
+  private async buildQuote(userId: number, dto: CreateCheckoutDto) {
     const cart = await this.prisma.cart.findUnique({
       where: { userId },
       include: { items: { include: { product: true } } },
@@ -89,7 +89,7 @@ export class CheckoutService {
     if (!cart || cart.items.length === 0) throw new BadRequestException('Cart is empty');
 
     for (const item of cart.items) {
-      if (item.quantity > item.product.stock) {
+      if (item.quantity > item.product.quantity) {
         throw new BadRequestException(`Insufficient stock for ${item.product.name}`);
       }
     }

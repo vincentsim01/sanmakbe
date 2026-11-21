@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 // Response shapes (for Swagger docs). Prisma generates the real DB types.
 export class CheckoutItemEntity {
-  @ApiProperty() productId: string;
+  @ApiProperty() productId: number;
   @ApiProperty() name: string;
   @ApiProperty() unitPrice: string;
   @ApiProperty() quantity: number;

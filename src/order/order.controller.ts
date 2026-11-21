@@ -1,14 +1,11 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // adjust path
-import { RolesGuard } from '../auth/guards/roles.guard'; // adjust path
-import { Roles } from '../auth/decorators/roles.decorator'; // adjust path
+import { Roles } from '../auth/auth.decorators';
 import { OrderService } from './order.service';
 import { QueryOrderDto, UpdateOrderDto } from './dto';
 
 @ApiTags('orders')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -21,7 +18,6 @@ export class OrderController {
 
   // admin: all orders (declared before :id so it isn't treated as an id)
   @Get('admin/all')
-  @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SUPERADMIN')
   findAll(@Query() query: QueryOrderDto) {
     return this.orderService.findAll(query);
@@ -39,7 +35,6 @@ export class OrderController {
   }
 
   @Patch(':id/status')
-  @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SUPERADMIN')
   updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateOrderDto) {
     return this.orderService.updateStatus(id, dto);

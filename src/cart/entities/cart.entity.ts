@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CartItemEntity {
   @ApiProperty() id: string;
   @ApiProperty() cartId: string;
-  @ApiProperty() productId: string;
+  @ApiProperty() productId: number;
   @ApiProperty() quantity: number;
   @ApiProperty() createdAt: Date;
   @ApiProperty() updatedAt: Date;
@@ -12,7 +12,7 @@ export class CartItemEntity {
 
 export class CartEntity {
   @ApiProperty() id: string;
-  @ApiProperty() userId: string;
+  @ApiProperty() userId: number;
   @ApiProperty({ type: [CartItemEntity] }) items: CartItemEntity[];
   @ApiProperty({ description: 'Sum of price x quantity' }) subtotal: string;
   @ApiProperty({ description: 'Total units in cart' }) itemCount: number;

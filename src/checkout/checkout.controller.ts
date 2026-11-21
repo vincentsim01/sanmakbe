@@ -1,12 +1,10 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // adjust path
 import { CheckoutService } from './checkout.service';
 import { CreateCheckoutDto } from './dto';
 
 @ApiTags('checkout')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('checkout')
 export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}

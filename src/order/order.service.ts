@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma } from '@prisma/client';
+import { OrderStatus, Prisma } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service'; // adjust path
 import { QueryOrderDto, UpdateOrderDto } from './dto';
 
@@ -18,7 +18,7 @@ export class OrderService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** userId = undefined means admin view (all orders). */
-  async findAll(query: QueryOrderDto, userId?: string) {
+  async findAll(query: QueryOrderDto, userId?: number) {
     const { status, page, limit } = query;
     const where: Prisma.OrderWhereInput = { ...(userId && { userId }), ...(status && { status }) };
 
@@ -35,7 +35,7 @@ export class OrderService {
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
-  async findOne(id: string, userId?: string) {
+  async findOne(id: string, userId?: number) {
     const order = await this.prisma.order.findFirst({
       where: { id, ...(userId && { userId }) },
       include: { items: true, shipment: true, payments: true },
@@ -45,7 +45,7 @@ export class OrderService {
   }
 
   /** Customer cancels their own unpaid order. */
-  async cancelOwn(id: string, userId: string) {
+  async cancelOwn(id: string, userId: number) {
     const order = await this.findOne(id, userId);
     if (order.status !== OrderStatus.PENDING_PAYMENT) {
       throw new BadRequestException('Only unpaid orders can be cancelled');
@@ -77,7 +77,7 @@ export class OrderService {
       for (const i of items) {
         await tx.product.update({
           where: { id: i.productId },
-          data: { stock: { increment: i.quantity } },
+          data: { quantity: { increment: i.quantity } },
         });
       }
       return tx.order.update({ where: { id }, data: { status: OrderStatus.CANCELLED } });

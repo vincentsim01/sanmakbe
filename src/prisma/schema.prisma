@@ -14,15 +14,6 @@ enum Role {
   SUPERADMIN
 }
 
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  EXPIRED
-  CANCELLED
-  REFUNDED
-}
-
 enum PaymentMethod {
   BANK_TRANSFER
   VIRTUAL_ACCOUNT
@@ -32,15 +23,16 @@ enum PaymentMethod {
   COD
 }
 
-enum ShipmentStatus {
+enum PaymentStatus {
   PENDING
-  PICKED_UP
-  IN_TRANSIT
-  DELIVERED
-  RETURNED
+  PAID
+  FAILED
+  EXPIRED
+  CANCELLED
+  REFUNDED
 }
 
-enum OrderStatus{
+enum OrderStatus {
   PENDING_PAYMENT
   PAID
   PROCESSING
@@ -48,6 +40,14 @@ enum OrderStatus{
   DELIVERED
   COMPLETED
   CANCELLED
+}
+
+enum ShipmentStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  RETURNED
 }
 
 model User {
@@ -59,6 +59,8 @@ model User {
   name         String?
   posts        Post[]
   sessions     AuthSession[]
+  cart         Cart?
+  orders       Order[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -86,48 +88,49 @@ model Post {
 }
 
 model Product {
-  id            Int     @id @default(autoincrement())
-  name          String
-  description   String
-  size          String[]
-  material      String[]
-  color         String[]
-  feature       String[] @default([])
-  price         Decimal @db.Decimal(10,2)
-  quantity      Int  @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String
+  size        String[]
+  material    String[]
+  color       String[]
+  feature     String[]    @default([])
+  price       Decimal     @db.Decimal(10, 2)
+  quantity    Int         @default(0)
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
-model Payment {
-  id            String      @id @default(uuid())
-  orderId       String
-  order         Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  amount        Decimal     @db.Decimal(14,2) 
-  currency      String      @default("IDR")
-  method        PaymentMethod
-  status        PaymentStatus @default(PENDING)
-  provider      String?
-  providerRef   String?       @unique // transaction id from the gateway
-  paymentUrl    String? // redirect / checkout URL
-  paidAt        DateTime?
-  expiresAt     DateTime?
-  metadata      Json?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime
+model Cart {
+  id        String     @id @default(uuid())
+  userId    Int        @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
 
-  @@index([orderId])
-  @@index([status])
-  @@map("payments")
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
 }
 
 model Order {
-  id            String        @id @default(uuid())
-  orderNumber   String        @unique
-  userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
-  status        OrderStatus   @default(PENDING_PAYMENT)
+  id           String      @id @default(uuid())
+  orderNumber  String      @unique
+  userId       Int
+  user         User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status       OrderStatus @default(PENDING_PAYMENT)
   subtotal     Decimal     @db.Decimal(14, 2)
   shippingCost Decimal     @db.Decimal(14, 2)
   discount     Decimal     @default(0) @db.Decimal(14, 2)
@@ -142,15 +145,14 @@ model Order {
 
   @@index([userId])
   @@index([status])
-  @@map("orders")
 }
 
-
+// Product name/price are copied at purchase time so history survives product edits
 model OrderItem {
   id          String  @id @default(uuid())
   orderId     String
   order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String
+  productId   Int
   product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
   productName String
   unitPrice   Decimal @db.Decimal(14, 2)
@@ -158,7 +160,6 @@ model OrderItem {
   subtotal    Decimal @db.Decimal(14, 2)
 
   @@index([orderId])
-  @@map("order_items")
 }
 
 model Shipment {
@@ -180,35 +181,25 @@ model Shipment {
   deliveredAt    DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-
-  @@map("shipments")
 }
 
-model Cart {
-  id        String  @id @default(uuid())
-  cartId    String
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Payment {
+  id          String        @id @default(uuid())
+  orderId     String
+  order       Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  amount      Decimal       @db.Decimal(14, 2)
+  currency    String        @default("IDR")
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+  provider    String? // e.g. "midtrans", "xendit"
+  providerRef String?       @unique // transaction id from the gateway
+  paymentUrl  String? // redirect / checkout URL
+  paidAt      DateTime?
+  expiresAt   DateTime?
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  @@unique([cartId, productId])
-  @@map("cart_items")
-
-}
-
-model CartItem {
-  id        String   @id @default(uuid())
-  cartId    String
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([cartId, productId])
-  @@map("cart_items")
+  @@index([orderId])
+  @@index([status])
 }
