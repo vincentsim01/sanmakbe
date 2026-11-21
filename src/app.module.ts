@@ -10,6 +10,8 @@ import { PaymentService } from './payment/payment.service';
 import { PaymentModule } from './payment/payment.module';
 import { CartModule } from './cart/cart.module';
 import { CheckoutModule } from './checkout/checkout.module';
+import { OrderModule } from './order/order.module';
+import { ShippingModule } from './shipping/shipping.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -29,6 +31,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     PaymentModule,
     CartModule,
     CheckoutModule,
+    OrderModule,
+    ShippingModule,
   ],
   controllers: [AppController, PaymentController],
   providers: [AppService, PaymentService],
