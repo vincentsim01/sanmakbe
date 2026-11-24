@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '../prisma/generated/client';
+import { Prisma } from '../../prisma/generated/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service'; // adjust path
 import { ShippingService } from '../shipping/shipping.service';
@@ -33,7 +33,7 @@ export class CheckoutService {
 
   /** Turn the cart into an order (status PENDING_PAYMENT). Pay via POST /payments afterwards. */
   async checkout(userId: number, dto: CreateCheckoutDto) {
-    const { cartId, items, subtotal, rate, total } = await this.buildQuote(userId, dto);
+    const { items, subtotal, rate, total } = await this.buildQuote(userId, dto);
 
     return this.prisma.$transaction(async (tx) => {
       // atomic stock decrement; fails if someone else bought the last unit
@@ -76,7 +76,8 @@ export class CheckoutService {
         include: { items: true, shipment: true },
       });
 
-      await tx.cartItem.deleteMany({ where: { cartId } });
+      // remove only the items that were checked out
+      await tx.cartItem.deleteMany({ where: { id: { in: items.map((i) => i.id) } } });
       return order;
     });
   }
@@ -88,17 +89,27 @@ export class CheckoutService {
     });
     if (!cart || cart.items.length === 0) throw new BadRequestException('Cart is empty');
 
-    for (const item of cart.items) {
+    // checkout only the selected cart items (or everything if none were chosen)
+    let selected = cart.items;
+    if (dto.cartItemIds?.length) {
+      const ids = new Set(dto.cartItemIds);
+      selected = cart.items.filter((i) => ids.has(i.id));
+      if (selected.length !== ids.size) {
+        throw new BadRequestException('Some selected items are not in your cart');
+      }
+    }
+
+    for (const item of selected) {
       if (item.quantity > item.product.quantity) {
         throw new BadRequestException(`Insufficient stock for ${item.product.name}`);
       }
     }
 
-    const subtotal = cart.items.reduce(
+    const subtotal = selected.reduce(
       (sum, i) => sum.add(i.product.price.mul(i.quantity)),
       new Prisma.Decimal(0),
     );
-    const totalQty = cart.items.reduce((n, i) => n + i.quantity, 0);
+    const totalQty = selected.reduce((n, i) => n + i.quantity, 0);
     const rate = this.shippingService.getRate(
       dto.courier,
       dto.service,
@@ -108,7 +119,7 @@ export class CheckoutService {
 
     return {
       cartId: cart.id,
-      items: cart.items,
+      items: selected,
       subtotal,
       rate,
       total: subtotal.add(rate.cost),
