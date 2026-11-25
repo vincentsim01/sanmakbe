@@ -1,40 +1,37 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsISO31661Alpha2, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 
 export class ShippingAddressDto {
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
   recipientName: string;
 
-  @ApiProperty({ example: '081234567890' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(30)
+  @ApiProperty({ example: '+6591234567' })
+  @Matches(/^\+?[0-9]{8,15}$/, { message: 'Invalid phone number' })
   phone: string;
 
-  @ApiProperty({ example: 'Jl. Example No. 1' })
+  @ApiProperty({ example: '10 Bayfront Avenue #01-01' })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(500)
   address: string;
 
-  @ApiProperty({ example: 'Jakarta' })
+  @ApiPropertyOptional({ example: 'Singapore', description: 'Defaults to Singapore' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  city: string;
+  city?: string;
 
-  @ApiProperty({ example: 'DKI Jakarta' })
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  province: string;
+  province?: string;
 
-  @ApiProperty({ example: '12345' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(20)
+  @ApiProperty({ example: '018956' })
+  @Matches(/^[A-Za-z0-9 -]{4,10}$/, { message: 'Invalid postal code' })
   postalCode: string;
+
+  @ApiPropertyOptional({ example: 'SG', description: 'ISO country code, defaults to SG' })
+  @IsOptional()
+  @IsISO31661Alpha2()
+  country?: string;
 }

@@ -3,7 +3,6 @@ import { Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
-  IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
@@ -27,16 +26,6 @@ export class CreateCheckoutDto {
   @ValidateNested()
   @Type(() => ShippingAddressDto)
   shippingAddress: ShippingAddressDto;
-
-  @ApiProperty({ example: 'JNE' })
-  @IsString()
-  @IsNotEmpty()
-  courier: string;
-
-  @ApiProperty({ example: 'REG' })
-  @IsString()
-  @IsNotEmpty()
-  service: string;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -1,22 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/client';
 import { randomBytes } from 'crypto';
-import { PrismaService } from '../prisma/prisma.service'; // adjust path
-import { ShippingService } from '../shipping/shipping.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateCheckoutDto } from './dto';
-
-const DEFAULT_ITEM_WEIGHT_G = 500; // TODO: use a real product weight field
 
 @Injectable()
 export class CheckoutService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly shippingService: ShippingService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  /** Preview totals without creating anything. */
+  /** Preview the items and subtotal. Shipping is added after the order exists. */
   async summary(userId: number, dto: CreateCheckoutDto) {
-    const { items, subtotal, rate, total } = await this.buildQuote(userId, dto);
+    const { items, subtotal } = await this.buildQuote(userId, dto);
     return {
       items: items.map((i) => ({
         productId: i.productId,
@@ -26,17 +20,19 @@ export class CheckoutService {
         subtotal: i.product.price.mul(i.quantity),
       })),
       subtotal,
-      shipping: rate,
-      total,
     };
   }
 
-  /** Turn the cart into an order (status PENDING_PAYMENT). Pay via POST /payments afterwards. */
+  /**
+   * Cart -> order (PENDING_PAYMENT) with the shipping address saved.
+   * Shipping cost is 0 until the customer picks an option:
+   *   GET  /shipping/order/:id/rates
+   *   POST /shipping/order/:id/select
+   */
   async checkout(userId: number, dto: CreateCheckoutDto) {
-    const { items, subtotal, rate, total } = await this.buildQuote(userId, dto);
+    const { items, subtotal } = await this.buildQuote(userId, dto);
 
     return this.prisma.$transaction(async (tx) => {
-      // atomic stock decrement; fails if someone else bought the last unit
       for (const item of items) {
         const res = await tx.product.updateMany({
           where: { id: item.productId, quantity: { gte: item.quantity } },
@@ -52,8 +48,9 @@ export class CheckoutService {
           orderNumber: this.generateOrderNumber(),
           userId,
           subtotal,
-          shippingCost: new Prisma.Decimal(rate.cost),
-          totalAmount: total,
+          shippingCost: 0,
+          totalAmount: subtotal,
+          currency: process.env.SHOP_CURRENCY ?? 'SGD',
           notes: dto.notes,
           items: {
             create: items.map((i) => ({
@@ -64,19 +61,12 @@ export class CheckoutService {
               subtotal: i.product.price.mul(i.quantity),
             })),
           },
-          shipment: {
-            create: {
-              courier: rate.courier,
-              service: rate.service,
-              cost: new Prisma.Decimal(rate.cost),
-              ...dto.shippingAddress,
-            },
-          },
+          // courier / service / cost stay empty until a rate is selected
+          shipment: { create: { ...dto.shippingAddress } },
         },
         include: { items: true, shipment: true },
       });
 
-      // remove only the items that were checked out
       await tx.cartItem.deleteMany({ where: { id: { in: items.map((i) => i.id) } } });
       return order;
     });
@@ -89,7 +79,6 @@ export class CheckoutService {
     });
     if (!cart || cart.items.length === 0) throw new BadRequestException('Cart is empty');
 
-    // checkout only the selected cart items (or everything if none were chosen)
     let selected = cart.items;
     if (dto.cartItemIds?.length) {
       const ids = new Set(dto.cartItemIds);
@@ -109,21 +98,7 @@ export class CheckoutService {
       (sum, i) => sum.add(i.product.price.mul(i.quantity)),
       new Prisma.Decimal(0),
     );
-    const totalQty = selected.reduce((n, i) => n + i.quantity, 0);
-    const rate = this.shippingService.getRate(
-      dto.courier,
-      dto.service,
-      dto.shippingAddress.city,
-      totalQty * DEFAULT_ITEM_WEIGHT_G,
-    );
-
-    return {
-      cartId: cart.id,
-      items: selected,
-      subtotal,
-      rate,
-      total: subtotal.add(rate.cost),
-    };
+    return { items: selected, subtotal };
   }
 
   private generateOrderNumber() {
