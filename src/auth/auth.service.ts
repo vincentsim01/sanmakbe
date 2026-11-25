@@ -9,7 +9,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 import { randomUUID } from 'node:crypto';
-import { Prisma } from '../prisma/generated/client';
+import { Prisma } from '../generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AUTH_CONFIG, type AuthConfig } from './auth.config';
 import type { LoginDto, RegisterDto } from './auth.dto';

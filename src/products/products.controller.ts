@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { Roles } from '../auth/auth.decorators';
-import { Role } from '../prisma/generated/client';
+import { Role } from '../generated/client';
 
 import {
   ApiTags,

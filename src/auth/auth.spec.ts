@@ -7,7 +7,7 @@ import {
 import { Test } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
-import { Prisma, Role } from '../prisma/generated/client';
+import { Prisma, Role } from '../generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductsController } from '../products/products.controller';
 import { ProductsService } from '../products/products.service';

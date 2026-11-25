@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '../../prisma/generated/client';
+import { Prisma } from '../generated/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service'; // adjust path
 import { ShippingService } from '../shipping/shipping.service';

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ShipmentStatus } from '../../prisma/generated/client';
+import { ShipmentStatus } from '../../generated/client';
 
 // Response shapes (for Swagger docs). Prisma generates the real DB types.
 export class ShippingRateEntity {
